@@ -184,18 +184,80 @@ class ClusCoLog:
         unit = 115
         if version == 0: unit = 90
 
+        self.data_header = 6 # ???
+        self.data_unit = 53 # ???
         self.info_col = self.make_info_col(version, header, unit)
         self.filename = filename
         self.data = np.loadtxt(self.filename, unpack=True, usecols=self.info_col)
         self.time = self.read_time()
         self.states = self.read_var()
-        self.data_header = 6 # ???
-        self.data_unit = 53 # ???
+
+
+    def _make_info_col(
+        self, version = 1, *args, **kwargs,
+    ):
+        
+        # log info
+        if version == 0:
+            header = 9
+            unit = 90
+        elif version == 1:
+            header = 9
+            unit = 115
+        else:
+            raise KeyError
+
+        # specify the indices
+        base_col = [
+            np.arange(6, 6+1), # scb temp
+            np.arange(8, 8+1), # scb temp
+            np.arange(10, 10+7), # amp temp
+            np.arange(60, 60+7), # high voltage
+            np.arange(68, 68+7), # anode current
+            np.arange(76, 76+1), # bp temp
+            np.arange(79, 79+7), # ipr
+        ]
+
+        if version == 0:
+            base_col = base_col + [
+                np.arange(87, 87+1), # L1 local
+                np.arange(89, 89+1), # Camera Late
+            ]
+        elif version == 1:
+            base_col = base_col + [
+                np.arange(88, 88+7), # L0 Local
+                np.arange(96, 96+1), # L1 local
+                np.arange(98, 98+1), # Camera Late
+                np.arange(101, 101+6), # L1 thresholds
+                np.arange(108, 108+7), # hot pixel
+            ]
+        else:
+            raise KeyError
+    
+        # single array
+        base_col = np.concatenate(base_col)
+
+        # header shift
+        base_col = base_col + header
+        # iterate: module
+        nmod = 265
+        base_col = np.repeat(base_col.reshape(1,-1), nmod, axis=0)
+        ind_mod = (np.arange(0, nmod) * unit).reshape(-1,1)
+        info_col = base_col + ind_mod
+        info_col = info_col.flatten()
+
+        # time info
+        info_col = np.append((2,3,4,5,6,7), info_col)
+
+        return info_col
 
 
     def make_info_col(
-        self, version, header, unit
+        self, version = 1, *args, **kwargs,
     ):
+        
+        header = 9
+        unit = 115
 
         info_col = np.empty(0, int)
         info_col = np.append(info_col, (2,3,4,5,6,7)) # time

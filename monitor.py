@@ -80,7 +80,7 @@ def main():
 
     max_duration = datetime.timedelta(minutes=30)
     frame_time = 5.0 # seconds
-    path_clog = "./data/*.txt"
+    path_clog = "../Camera/data/*.txt"
 
     # start/end time
     start = datetime.datetime.now()
